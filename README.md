@@ -20,4 +20,7 @@
 
 ## 状态
 
-🚧 Day 1：搭建中
+- [x] **Day 1 冒烟通过**：mini-swe-agent × `deepseek-flash` 解出 SWE-bench Lite 首个实例（marshmallow-code__marshmallow-1343），自建判卷脚本 [`scripts/evaluate.py`](scripts/evaluate.py) 判定 **RESOLVED**（F2P 1/1，P2P 24/24），agent 总成本 $0.0045（14 次 API 调用）。完整轨迹见 [`examples/`](examples/)
+- [ ] Day 2-3：实例收割管线（click / fastapi / pydantic 2026-08 之后的 merged PR）
+- [ ] Day 4-5：基线评测跑（本地 Qwen3-8B + API 模型对照）
+- [ ] Day 6-7：失败分析 + 博客
