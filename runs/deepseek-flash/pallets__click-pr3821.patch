@@ -1,0 +1,45 @@
+diff --git a/src/click/core.py b/src/click/core.py
+index c3e68b1..d748ed8 100755
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -3363,10 +3363,15 @@ class Option(Parameter):
+                 nargs=self.nargs,
+             )
+ 
+-    def get_help_record(self, ctx: Context) -> tuple[str, str] | None:
+-        if self.hidden:
+-            return None
++    def get_help_spec(self, ctx: Context) -> str:
++        """Get the option's invocation specification for the help page.
+ 
++        This is the left column of the option's help record, such as
++        ``-v, --verbose`` or ``--color / --no-color``. Unlike
++        :meth:`get_help_record`, this is also available for hidden options.
++
++        :param ctx: The invocation context.
++        """
+         any_prefix_is_slash = False
+ 
+         def _write_opts(opts: cabc.Sequence[str]) -> str:
+@@ -3387,6 +3392,12 @@ class Option(Parameter):
+         if self.secondary_opts:
+             rv.append(_write_opts(self.secondary_opts))
+ 
++        return ("; " if any_prefix_is_slash else " / ").join(rv)
++
++    def get_help_record(self, ctx: Context) -> tuple[str, str] | None:
++        if self.hidden:
++            return None
++
+         help = self.help or ""
+ 
+         extra = self.get_help_extra(ctx)
+@@ -3406,7 +3417,7 @@ class Option(Parameter):
+             extra_str = "; ".join(extra_items)
+             help = f"{help}  [{extra_str}]" if help else f"[{extra_str}]"
+ 
+-        return ("; " if any_prefix_is_slash else " / ").join(rv), help
++        return self.get_help_spec(ctx), help
+ 
+     def get_help_extra(self, ctx: Context) -> types.OptionHelpExtra:
+         extra: types.OptionHelpExtra = {}

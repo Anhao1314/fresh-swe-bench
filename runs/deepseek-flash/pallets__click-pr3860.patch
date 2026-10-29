@@ -1,0 +1,41 @@
+diff --git a/src/click/core.py b/src/click/core.py
+index 18a43ac..52dd41a 100755
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -1310,14 +1310,21 @@ class Command:
+                 formatter.write_dl(opts)
+ 
+     def format_arguments(self, ctx: Context, formatter: HelpFormatter) -> None:
+-        """Writes the arguments that have a help record into the formatter."""
++        """Writes all arguments into the formatter if at least one has help."""
+         args = []
++        has_help = False
+         for param in self.get_params(ctx):
++            if not isinstance(param, Argument):
++                continue
++
+             rv = param.get_help_record(ctx)
+-            if rv is not None and isinstance(param, Argument):
++            if rv is not None:
+                 args.append(rv)
+ 
+-        if args:
++            if param.help is not None:
++                has_help = True
++
++        if has_help and args:
+             with formatter.section(_("Positional arguments")):
+                 formatter.write_dl(args)
+ 
+@@ -3800,10 +3807,7 @@ class Argument(Parameter):
+         return [self.make_metavar(ctx)]
+ 
+     def get_help_record(self, ctx: Context) -> tuple[str, str] | None:
+-        if self.help is None:
+-            return None
+-
+-        return self.make_metavar(ctx), self.help
++        return self.make_metavar(ctx), self.help or ""
+ 
+     def get_error_hint(self, ctx: Context | None) -> str:
+         if ctx is not None:

@@ -1,0 +1,57 @@
+diff --git a/src/click/utils.py b/src/click/utils.py
+index b529eb0..61a741c 100755
+--- a/src/click/utils.py
++++ b/src/click/utils.py
+@@ -80,36 +80,26 @@ def _make_default_short_help(help: str, max_length: int = 45) -> str:
+     if words[0] == "\b":
+         words = words[1:]
+ 
+-    total_length = 0
+-    last_index = len(words) - 1
+-
++    # Find the first sentence, but don't stop at abbreviations such as "e.g."
++    # or "vs.". A period ends a sentence if it is at the end of the text or
++    # followed by a word that starts with an uppercase letter or a digit.
+     for i, word in enumerate(words):
+-        total_length += len(word) + (i > 0)
+-
+-        if total_length > max_length:  # too long, truncate
+-            break
+-
+-        if word[-1] == ".":  # sentence end, truncate without "..."
+-            return " ".join(words[: i + 1])
+-
+-        if total_length == max_length and i != last_index:
+-            break  # not at sentence end, truncate with "..."
+-    else:
+-        return " ".join(words)  # no truncation needed
+-
+-    # Account for the length of the suffix.
+-    total_length += len("...")
+-
+-    # remove words until the length is short enough
+-    while i > 0:
+-        total_length -= len(words[i]) + (i > 0)
+-
+-        if total_length <= max_length:
++        if word.endswith(".") and (
++            i == len(words) - 1
++            or words[i + 1][0].isupper()
++            or words[i + 1][0].isdigit()
++        ):
++            words = words[: i + 1]
+             break
+ 
+-        i -= 1
++    # Import lazily to keep Click's base import lightweight.
++    import textwrap
+ 
+-    return " ".join(words[:i]) + "..."
++    # A width narrower than the placeholder still needs to fit the placeholder.
++    width = max(max_length, len("..."))
++    return textwrap.shorten(
++        " ".join(words), width, placeholder="...", break_on_hyphens=False
++    )
+ 
+ 
+ class _LazyFile:

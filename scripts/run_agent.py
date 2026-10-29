@@ -155,7 +155,9 @@ def run_agent_on(inst: dict, out_dir: Path, model_name: str, sys_t: str, ins_t: 
 
 
 def evaluate(inst: dict, patch_path: Path) -> dict:
-        patch = patch_path.read_text(encoding="utf-8").strip() if patch_path.exists() else ""
+        # strip only newlines: a plain .strip() would eat whitespace-only
+        # context lines at the patch tail and corrupt the hunk line counts
+        patch = patch_path.read_text(encoding="utf-8").strip("\n") if patch_path.exists() else ""
         if not patch:
             return {"resolved": False, "detail": "empty patch"}
         name = f"fsb-eval-{uuid.uuid4().hex[:8]}"

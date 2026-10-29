@@ -1,0 +1,119 @@
+diff --git a/src/click/core.py b/src/click/core.py
+index de129ec..223c05e 100755
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -1546,40 +1546,45 @@ class Command:
+         # Process shell completion requests and exit early.
+         self._main_shell_completion(extra, prog_name, complete_var)
+ 
++        exit_code = 0
++        message: str | ClickException | None = None
++        echo_newline = False
++
+         try:
+-            try:
+-                with self.make_context(prog_name, args, **extra) as ctx:
+-                    rv = self.invoke(ctx)
+-                    if not standalone_mode:
+-                        return rv
+-                    # it's not safe to `ctx.exit(rv)` here!
+-                    # note that `rv` may actually contain data like "1" which
+-                    # has obvious effects
+-                    # more subtle case: `rv=[None, None]` can come out of
+-                    # chained commands which all returned `None` -- so it's not
+-                    # even always obvious that `rv` indicates success/failure
+-                    # by its truthiness/falsiness
+-                    ctx.exit()
+-            except (EOFError, KeyboardInterrupt) as e:
+-                echo(file=sys.stderr)
+-                raise Abort() from e
+-            except ClickException as e:
++            with self.make_context(prog_name, args, **extra) as ctx:
++                rv = self.invoke(ctx)
+                 if not standalone_mode:
+-                    raise
+-                e.show()
+-                sys.exit(e.exit_code)
+-            except OSError as e:
+-                if e.errno == errno.EPIPE:
+-                    sys.stdout = t.cast(t.TextIO, _PacifyFlushWrapper(sys.stdout))
+-                    sys.stderr = t.cast(t.TextIO, _PacifyFlushWrapper(sys.stderr))
+-                    sys.exit(1)
+-                else:
+-                    raise
+-        except Exit as e:
+-            if standalone_mode:
+-                sys.exit(e.exit_code)
++                    return rv
++                # it's not safe to `ctx.exit(rv)` here!
++                # note that `rv` may actually contain data like "1" which
++                # has obvious effects
++                # more subtle case: `rv=[None, None]` can come out of
++                # chained commands which all returned `None` -- so it's not
++                # even always obvious that `rv` indicates success/failure
++                # by its truthiness/falsiness
++                ctx.exit()
++        except (EOFError, KeyboardInterrupt) as e:
++            if not standalone_mode:
++                raise Abort() from e
++
++            echo_newline = True
++            message = _("Aborted!")
++            exit_code = 1
++        except ClickException as e:
++            if not standalone_mode:
++                raise
++
++            message = e
++            exit_code = e.exit_code
++        except OSError as e:
++            if e.errno == errno.EPIPE:
++                sys.stdout = t.cast(t.TextIO, _PacifyFlushWrapper(sys.stdout))
++                sys.stderr = t.cast(t.TextIO, _PacifyFlushWrapper(sys.stderr))
++                exit_code = 1
+             else:
+-                # in non-standalone mode, return the exit code
++                raise
++        except Exit as e:
++            if not standalone_mode:
+                 # note that this is only reached if `self.invoke` above raises
+                 # an Exit explicitly -- thus bypassing the check there which
+                 # would return its result
+@@ -1588,11 +1593,35 @@ class Command:
+                 # `ctx.exit(1)` and to `return 1`, the caller won't be able to
+                 # tell the difference between the two
+                 return e.exit_code
++
++            exit_code = e.exit_code
+         except Abort:
+             if not standalone_mode:
+                 raise
+-            echo(_("Aborted!"), file=sys.stderr)
+-            sys.exit(1)
++
++            message = _("Aborted!")
++            exit_code = 1
++
++        # The exit code has already been determined, so a late interrupt can
++        # only prevent the message from being shown, not replace the outcome.
++        while True:
++            try:
++                if isinstance(message, ClickException):
++                    message.show()
++                    message = None
++                elif message is not None:
++                    if echo_newline:
++                        echo(file=sys.stderr)
++                        echo_newline = False
++
++                    echo(message, file=sys.stderr)
++                    message = None
++
++                sys.exit(exit_code)
++            except KeyboardInterrupt:
++                # Drop any partially written message and try to exit again.
++                message = None
++                echo_newline = False
+ 
+     def _main_shell_completion(
+         self,

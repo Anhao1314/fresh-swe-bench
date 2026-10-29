@@ -115,6 +115,36 @@ def scan(repo: str, since: str, out: str) -> None:
 
 # --------------------------------------------------------------- build stage
 
+HUNK_HEADER = re.compile(r"@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
+SECTION_HEADER = re.compile(
+    r"^(?:diff --git|index |--- |\+\+\+ |new file|deleted file|old mode|"
+    r"new mode|similarity |rename |Binary )")
+
+
+def _trim_to_hunks(body: str) -> str:
+    """Keep only structurally valid diff lines: hunk bodies are consumed
+    exactly up to their declared line counts; anything glued after them
+    (console junk, stray whitespace) is dropped."""
+    out, remaining, in_hunk = [], 0, False
+    for line in body.splitlines(keepends=True):
+        if remaining > 0:
+            out.append(line)
+            if not line.startswith("\\"):
+                remaining -= 1
+            continue
+        m = HUNK_HEADER.match(line)
+        if m:
+            old = int(m.group(1) or 1)
+            new = int(m.group(2) or 1)
+            remaining = old + new
+            in_hunk = True
+            out.append(line)
+        elif not in_hunk and SECTION_HEADER.match(line):
+            out.append(line)
+        # lines after the last hunk body and non-header lines: drop
+    return "".join(out)
+
+
 def split_diff(diff: str) -> tuple[str, str]:
     """Split a PR diff into (test_patch, golden_patch); drop docs/metadata."""
     sections, current = [], None
@@ -132,7 +162,9 @@ def split_diff(diff: str) -> tuple[str, str]:
     test, golden = [], []
     for sec in sections:
         p = path_of(sec)
-        body = "".join(sec)
+        body = _trim_to_hunks("".join(sec))
+        if not body.strip():
+            continue
         if p.startswith("tests/"):
             test.append(body)
         elif p.endswith(".py") and not p.startswith(("docs/", "examples/")):

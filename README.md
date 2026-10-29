@@ -22,6 +22,7 @@
 
 - [x] **Day 1 冒烟通过**：mini-swe-agent × `deepseek-flash` 解出 SWE-bench Lite 首个实例（marshmallow-code__marshmallow-1343），自建判卷脚本 [`scripts/evaluate.py`](scripts/evaluate.py) 判定 **RESOLVED**（F2P 1/1，P2P 24/24），agent 总成本 $0.0045（14 次 API 调用）。完整轨迹见 [`examples/`](examples/)
 - [x] **Day 2 收割管线建成**（[`scripts/harvest.py`](scripts/harvest.py)：scan → build → verify）：click 14 候选 → **11 实例通过 docker 验证**（基线必挂 + 金补丁必过）；fastapi 34、pydantic 72 候选已构建待验证，合计 120 个候选
+- [x] **Day 2-3 基线成绩单**：deepseek-flash × click 11 实例，解决 **6/11（54.5%）**，总 agent 成本 **$0.11**（判卷全部由自建管线完成；任务全部生成于 2026-08 之后，无数据污染）。逐例结果见 [`runs/deepseek-flash/report.md`](runs/deepseek-flash/report.md)
 - [ ] Day 3：per-repo 安装规格（fastapi 测试依赖、pydantic 的 Rust 构建）+ 全量验证
-- [ ] Day 4-5：基线评测跑（deepseek-flash 已通，本地 Qwen3-8B 对照）
+- [ ] 本地 Qwen3-8B 对照跑
 - [ ] Day 6-7：失败分析 + 博客

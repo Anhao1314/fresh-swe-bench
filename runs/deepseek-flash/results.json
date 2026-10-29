@@ -2,10 +2,100 @@
   {
     "instance_id": "pallets__click-pr3884",
     "resolved": false,
-    "patch_bytes": 1669,
-    "cost": 0.004998198,
+    "patch_bytes": 1388,
+    "cost": 0.007228644,
+    "n_calls": 13,
+    "duration_s": 55,
+    "detail": "F2P 0/7"
+  },
+  {
+    "instance_id": "pallets__click-pr3877",
+    "resolved": false,
+    "patch_bytes": 7001,
+    "cost": 0.01595781,
+    "n_calls": 22,
+    "duration_s": 107,
+    "detail": "F2P 0/20"
+  },
+  {
+    "instance_id": "pallets__click-pr3865",
+    "resolved": false,
+    "patch_bytes": 1902,
+    "cost": 0.012713021999999996,
+    "n_calls": 26,
+    "duration_s": 130,
+    "detail": "F2P 0/3"
+  },
+  {
+    "instance_id": "pallets__click-pr3860",
+    "resolved": true,
+    "patch_bytes": 1447,
+    "cost": 0.006074777999999999,
     "n_calls": 14,
-    "duration_s": 42,
-    "detail": "model patch failed to apply"
+    "duration_s": 52,
+    "detail": "F2P 4/4"
+  },
+  {
+    "instance_id": "pallets__click-pr3821",
+    "resolved": false,
+    "patch_bytes": 1659,
+    "cost": 0.00375978,
+    "n_calls": 15,
+    "duration_s": 35,
+    "detail": "F2P 0/8"
+  },
+  {
+    "instance_id": "pallets__click-pr3818",
+    "resolved": true,
+    "patch_bytes": 4839,
+    "cost": 0.01423926,
+    "n_calls": 20,
+    "duration_s": 121,
+    "detail": "F2P 5/5"
+  },
+  {
+    "instance_id": "pallets__click-pr3805",
+    "resolved": true,
+    "patch_bytes": 879,
+    "cost": 0.0035575199999999998,
+    "n_calls": 9,
+    "duration_s": 39,
+    "detail": "F2P 3/3"
+  },
+  {
+    "instance_id": "pallets__click-pr3777",
+    "resolved": false,
+    "patch_bytes": 4325,
+    "cost": 0.023423244,
+    "n_calls": 13,
+    "duration_s": 51,
+    "detail": "F2P 0/6"
+  },
+  {
+    "instance_id": "pallets__click-pr3769",
+    "resolved": true,
+    "patch_bytes": 962,
+    "cost": 0.007815552,
+    "n_calls": 13,
+    "duration_s": 62,
+    "detail": "F2P 6/6"
+  },
+  {
+    "instance_id": "pallets__click-pr3767",
+    "resolved": true,
+    "patch_bytes": 8649,
+    "cost": 0.008280942,
+    "n_calls": 17,
+    "duration_s": 43,
+    "detail": "F2P 4/4"
+  },
+  {
+    "instance_id": "pallets__click-pr3764",
+    "resolved": true,
+    "patch_bytes": 642,
+    "cost": 0.0065790300000000005,
+    "n_calls": 16,
+    "duration_s": 48,
+    "detail": "F2P 1/1"
   }
 ]
