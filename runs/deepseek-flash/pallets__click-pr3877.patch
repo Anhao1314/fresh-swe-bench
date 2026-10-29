@@ -1,0 +1,189 @@
+diff --git a/src/click/core.py b/src/click/core.py
+index 1f9323a..9015a91 100755
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -2334,7 +2334,14 @@ class Parameter(ABC):
+     param_type_name = "parameter"
+ 
+     name: str
++    #: The primary declarations for this parameter. For an option these are
++    #: the flags that set its value, such as ``["-f", "--foo"]``. For an
++    #: argument this contains its single name declaration, such as
++    #: ``["filename"]``.
+     opts: list[str]
++    #: The declarations that set a boolean flag to its secondary value, such
++    #: as ``["--no-foo"]`` from ``--foo/--no-foo``. Empty for arguments and
++    #: for options without a secondary flag.
+     secondary_opts: list[str]
+     # `Parameter.type` is annotated in `__init__` to avoid confusing mypy
+     required: bool
+@@ -2353,6 +2360,19 @@ class Parameter(ABC):
+     deprecated: bool | str
+     help: str | None
+ 
++    def __init_subclass__(cls, **kwargs: t.Any) -> None:
++        super().__init_subclass__(**kwargs)
++
++        if "human_readable_name" in cls.__dict__:
++            import warnings
++
++            warnings.warn(
++                "Overriding 'human_readable_name' is deprecated and will be"
++                " removed in Click 9.0. Override 'spec' instead.",
++                DeprecationWarning,
++                stacklevel=2,
++            )
++
+     def __init__(
+         self,
+         param_decls: cabc.Sequence[str] | None = None,
+@@ -2432,7 +2452,7 @@ class Parameter(ABC):
+ 
+             if required and deprecated:
+                 raise ValueError(
+-                    f"The {self.param_type_name} '{self.human_readable_name}' "
++                    f"The {self.param_type_name} '{self.spec}' "
+                     "is deprecated and still required. A deprecated "
+                     f"{self.param_type_name} cannot be required."
+                 )
+@@ -2517,12 +2537,34 @@ class Parameter(ABC):
+         )
+ 
+     @property
+-    def human_readable_name(self) -> str:
+-        """Returns the human readable name of this parameter.  This is the
+-        same as the name for options, but the metavar for arguments.
++    def spec(self) -> str:
++        """The canonical user-facing identifier for this parameter.
++
++        For an option, this is the declaration used to derive :attr:`name`,
++        such as ``--foo`` in ``["-f", "--foo"]``. For an argument, this is
++        its uppercased name, or its custom metavar.
++
++        .. versionadded:: 8.6.0
+         """
+         return self.name
+ 
++    @property
++    def human_readable_name(self) -> str:
++        """Deprecated alias for :attr:`spec`.
++
++        .. deprecated:: 8.6.0
++            Use :attr:`spec` instead.
++        """
++        import warnings
++
++        warnings.warn(
++            "'human_readable_name' is deprecated and will be removed in"
++            " Click 9.0. Use 'spec' instead.",
++            DeprecationWarning,
++            stacklevel=_outside_click_stacklevel(),
++        )
++        return self.spec
++
+     def make_metavar(self, ctx: Context) -> str:
+         if self.metavar is not None:
+             return self.metavar
+@@ -2873,7 +2915,7 @@ class Parameter(ABC):
+                     "{extra_message}"
+                 ).format(
+                     param_type=self.param_type_name,
+-                    name=self.human_readable_name,
++                    name=self.spec,
+                     extra_message=_format_deprecated_suffix(self.deprecated),
+                 )
+                 echo(style(message, fg="red"), err=True)
+@@ -2923,6 +2965,17 @@ class Parameter(ABC):
+     def get_help_record(self, ctx: Context) -> tuple[str, str] | None:
+         return None
+ 
++    def get_help_spec(self, ctx: Context) -> str:
++        """Returns the parameter's spec as it appears in the left column of
++        its help record.
++
++        Subclasses customize this when the help page annotates the spec, such
++        as with an argument's optionality and repetition markers.
++
++        .. versionadded:: 8.6.0
++        """
++        return self.spec
++
+     def get_usage_pieces(self, ctx: Context) -> list[str]:
+         return []
+ 
+@@ -2933,7 +2986,7 @@ class Parameter(ABC):
+         .. versionchanged:: 8.4.0
+             ``ctx`` can be ``None``.
+         """
+-        hint_list = self.opts or [self.human_readable_name]
++        hint_list = self.opts or [self.spec]
+         return " / ".join(f"'{x}'" for x in hint_list)
+ 
+     def shell_complete(self, ctx: Context, incomplete: str) -> list[CompletionItem]:
+@@ -3419,6 +3472,21 @@ class Option(Parameter):
+ 
+         return name, opts, secondary_opts
+ 
++    @property
++    def spec(self) -> str:
++        """The preferred declaration for this option.
++
++        A long option is preferred over a short one, regardless of the order
++        in which the declarations were given. When multiple declarations share
++        the same prefix, the first one declared wins.
++        """
++        declarations = self.opts or self.secondary_opts
++
++        if declarations:
++            return max(declarations, key=lambda opt: len(_split_opt(opt)[0]))
++
++        return self.name
++
+     def add_to_parser(self, parser: _OptionParser, ctx: Context) -> None:
+         if self.multiple:
+             action = "append"
+@@ -3468,6 +3536,10 @@ class Option(Parameter):
+         Unlike :meth:`get_help_record`, the spec is produced even when the
+         option is :attr:`hidden`.
+ 
++        .. versionchanged:: 8.6.0
++            Moved to :meth:`Parameter.get_help_spec`; this override formats
++            the option's declarations and metavar.
++
+         .. versionadded:: 8.5.1
+         """
+         any_prefix_is_slash = False
+@@ -3835,11 +3907,23 @@ class Argument(Parameter):
+         super().__init__(param_decls, required=required, help=help, **attrs)
+ 
+     @property
+-    def human_readable_name(self) -> str:
++    def spec(self) -> str:
++        """The argument's user-facing name.
++
++        This is the custom metavar if one was given, otherwise the name is
++        uppercased. Optionality and repetition markers belong to
++        :meth:`get_help_spec`, not the spec itself.
++        """
+         if self.metavar is not None:
+             return self.metavar
+         return self.name.upper()
+ 
++    def get_help_spec(self, ctx: Context) -> str:
++        """Return the argument's help spec, including optionality and
++        repetition markers.
++        """
++        return self.make_metavar(ctx)
++
+     def make_metavar(self, ctx: Context) -> str:
+         if self.metavar is not None:
+             return self.metavar
+@@ -3899,7 +3983,7 @@ class Argument(Parameter):
+     def get_error_hint(self, ctx: Context | None) -> str:
+         if ctx is not None:
+             return f"'{self.make_metavar(ctx)}'"
+-        return f"'{self.human_readable_name}'"
++        return f"'{self.spec}'"
+ 
+     def add_to_parser(self, parser: _OptionParser, ctx: Context) -> None:
+         parser.add_argument(dest=self.name, nargs=self.nargs, obj=self)

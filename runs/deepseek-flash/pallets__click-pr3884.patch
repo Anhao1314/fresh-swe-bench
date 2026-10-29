@@ -1,0 +1,39 @@
+diff --git a/src/click/core.py b/src/click/core.py
+index 9cf05a9..5a71064 100755
+--- a/src/click/core.py
++++ b/src/click/core.py
+@@ -3270,8 +3270,14 @@ class Option(Parameter):
+ 
+     def get_error_hint(self, ctx: Context | None) -> str:
+         result = super().get_error_hint(ctx)
+-        if self.show_envvar and self.envvar is not None:
+-            result += f" (env var: '{self.envvar}')"
++        if self.show_envvar and self.envvar:
++            if isinstance(self.envvar, str):
++                envvars = (self.envvar,)
++            else:
++                envvars = self.envvar
++            result += " (env var: {})".format(
++                ", ".join(f"'{envvar}'" for envvar in envvars)
++            )
+         return result
+ 
+     def _parse_decls(
+@@ -3439,7 +3445,7 @@ class Option(Parameter):
+         if self.show_envvar:
+             envvar = self.envvar
+ 
+-            if envvar is None:
++            if not envvar:
+                 if (
+                     self.allow_from_autoenv
+                     and ctx.auto_envvar_prefix is not None
+@@ -3447,7 +3453,7 @@ class Option(Parameter):
+                 ):
+                     envvar = f"{ctx.auto_envvar_prefix}_{self.name.upper()}"
+ 
+-            if envvar is not None:
++            if envvar:
+                 if isinstance(envvar, str):
+                     extra["envvars"] = (envvar,)
+                 else:

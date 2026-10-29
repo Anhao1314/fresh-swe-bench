@@ -1,0 +1,11 @@
+[
+  {
+    "instance_id": "pallets__click-pr3884",
+    "resolved": false,
+    "patch_bytes": 1669,
+    "cost": 0.004998198,
+    "n_calls": 14,
+    "duration_s": 42,
+    "detail": "model patch failed to apply"
+  }
+]
